@@ -41,7 +41,9 @@
 #pragma once
 
 #include <pcl/pcl_exports.h>
+#include <pcl/pcl_macros.h>
 #include <pcl/common/time.h>
+#include <pcl/features/integral_image_normal.h>
 #include <pcl/apps/in_hand_scanner/common_types.h>
 #include <pcl/apps/in_hand_scanner/boost.h>
 #include <pcl/apps/in_hand_scanner/eigen.h>
@@ -57,9 +59,6 @@
 
 namespace pcl
 {
-  template <class PointInT, class PointOutT>
-  class IntegralImageNormalEstimation;
-
   namespace ihs
   {
     class Integration;
@@ -83,8 +82,8 @@ namespace pcl
 
       public:
 
-        typedef pcl::ihs::OpenGLViewer       Base;
-        typedef pcl::ihs::OfflineIntegration Self;
+        using Base = pcl::ihs::OpenGLViewer;
+        using Self = pcl::ihs::OfflineIntegration;
 
         /** \brief Constructor. */
         explicit OfflineIntegration (Base* parent=nullptr);
@@ -106,27 +105,27 @@ namespace pcl
 
       private:
 
-        typedef pcl::PointXYZRGBA              PointXYZRGBA;
-        typedef pcl::PointCloud <PointXYZRGBA> CloudXYZRGBA;
-        typedef CloudXYZRGBA::Ptr              CloudXYZRGBAPtr;
-        typedef CloudXYZRGBA::ConstPtr         CloudXYZRGBAConstPtr;
+        using PointXYZRGBA = pcl::PointXYZRGBA;
+        using CloudXYZRGBA = pcl::PointCloud<PointXYZRGBA>;
+        using CloudXYZRGBAPtr = CloudXYZRGBA::Ptr;
+        using CloudXYZRGBAConstPtr = CloudXYZRGBA::ConstPtr;
 
-        typedef pcl::PointXYZRGBNormal              PointXYZRGBNormal;
-        typedef pcl::PointCloud <PointXYZRGBNormal> CloudXYZRGBNormal;
-        typedef CloudXYZRGBNormal::Ptr              CloudXYZRGBNormalPtr;
-        typedef CloudXYZRGBNormal::ConstPtr         CloudXYZRGBNormalConstPtr;
+        using PointXYZRGBNormal = pcl::PointXYZRGBNormal;
+        using CloudXYZRGBNormal = pcl::PointCloud<PointXYZRGBNormal>;
+        using CloudXYZRGBNormalPtr = CloudXYZRGBNormal::Ptr;
+        using CloudXYZRGBNormalConstPtr = CloudXYZRGBNormal::ConstPtr;
 
-        typedef pcl::ihs::Mesh         Mesh;
-        typedef pcl::ihs::MeshPtr      MeshPtr;
-        typedef pcl::ihs::MeshConstPtr MeshConstPtr;
+        using Mesh = pcl::ihs::Mesh;
+        using MeshPtr = pcl::ihs::MeshPtr;
+        using MeshConstPtr = pcl::ihs::MeshConstPtr;
 
-        typedef pcl::ihs::Integration                 Integration;
-        typedef boost::shared_ptr <Integration>       IntegrationPtr;
-        typedef boost::shared_ptr <const Integration> IntegrationConstPtr;
+        using Integration = pcl::ihs::Integration;
+        using IntegrationPtr = std::shared_ptr<Integration>;
+        using IntegrationConstPtr = std::shared_ptr<const Integration>;
 
-        typedef pcl::IntegralImageNormalEstimation <PointXYZRGBA, PointXYZRGBNormal> NormalEstimation;
-        typedef boost::shared_ptr <NormalEstimation>                                 NormalEstimationPtr;
-        typedef boost::shared_ptr <const NormalEstimation>                           NormalEstimationConstPtr;
+        using NormalEstimation = pcl::IntegralImageNormalEstimation <PointXYZRGBA, PointXYZRGBNormal>;
+        using NormalEstimationPtr = NormalEstimation::Ptr;
+        using NormalEstimationConstPtr = NormalEstimation::ConstPtr;
 
         /** \brief Helper object for the computation thread. Please have a look at the documentation of calcFPS. */
         class ComputationFPS : public Base::FPS
@@ -152,8 +151,8 @@ namespace pcl
           * \return True if success.
           */
         bool
-        getFilesFromDirectory (const std::string          path_dir,
-                               const std::string          extension,
+        getFilesFromDirectory (const std::string&          path_dir,
+                               const std::string&          extension,
                                std::vector <std::string>& files) const;
 
         /** \brief Load the transformation matrix from the given file.
@@ -218,8 +217,7 @@ namespace pcl
         bool destructor_called_;
 
       public:
-
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        PCL_MAKE_ALIGNED_OPERATOR_NEW
     };
   } // End namespace ihs
 } // End namespace pcl

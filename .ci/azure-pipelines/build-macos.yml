@@ -1,9 +1,14 @@
 jobs:
   - job: osx
-    displayName: macOS High Sierra
+    strategy:
+      matrix:
+        # macOS Catalina:
+        #   VMIMAGE: 'macOS-10.15'
+        macOS Mojave:
+          VMIMAGE: 'macOS-10.14'
     timeoutInMinutes: 0
     pool:
-      vmImage: 'macOS-10.13'
+      vmImage: '$(VMIMAGE)'
     variables:
       BUILD_DIR: '$(Agent.WorkFolder)/build'
       GOOGLE_TEST_DIR: '$(Agent.WorkFolder)/googletest'
@@ -25,7 +30,7 @@ jobs:
             -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5 \
             -DPCL_ONLY_CORE_POINT_TYPES=ON \
             -DBUILD_simulation=ON \
-            -DBUILD_surface_on_nurbs=ON \
+            -DBUILD_surface=OFF \
             -DBUILD_global_tests=ON \
             -DBUILD_examples=ON \
             -DBUILD_tools=ON \
@@ -46,7 +51,7 @@ jobs:
           cmake --build . -- test_filters test_registration test_registration_api
           cmake --build . -- -j2
         displayName: 'Build Library'
-      - script: cd $BUILD_DIR && ctest -V -T Test
+      - script: cd $BUILD_DIR/test && ctest -V -T Test
         displayName: 'Run Unit Tests'
       - task: PublishTestResults@2
         inputs:

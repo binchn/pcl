@@ -52,6 +52,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <functional>
 #include <iostream>
 #include <mutex>
 
@@ -69,7 +70,7 @@ class SimpleKinectTool
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr output (new pcl::PointCloud<pcl::PointXYZRGB>);
       PointCloudAOS<Host> data_host;
       data_host.points.resize (cloud->points.size());
-      for (size_t i = 0; i < cloud->points.size (); ++i)
+      for (std::size_t i = 0; i < cloud->points.size (); ++i)
       {
         PointXYZRGB pt;
         pt.x = cloud->points[i].x;
@@ -115,8 +116,8 @@ class SimpleKinectTool
     }
 
     template <template <typename> class Storage> void 
-    cloud_cb (const boost::shared_ptr<openni_wrapper::Image>& image,
-              const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, 
+    cloud_cb (const openni_wrapper::Image::Ptr& image,
+              const openni_wrapper::DepthImage::Ptr& depth_image,
               float constant)
     {
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr output (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -163,57 +164,55 @@ class SimpleKinectTool
       bool repeat = false;
 
       std::string path = "./frame_0.pcd";
-      filegrabber = new pcl::PCDGrabber<pcl::PointXYZRGB > (path, frames_per_second, repeat);
+      pcl::PCDGrabber<pcl::PointXYZRGB > filegrabber (path, frames_per_second, repeat);
       
       if (use_device)
       {
         std::cerr << "[RANSAC] Using GPU..." << std::endl;
-        boost::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = boost::bind (&SimpleKinectTool::file_cloud_cb<pcl_cuda::Device>, this, _1);
-        filegrabber->registerCallback (f);
+        std::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = std::bind (&SimpleKinectTool::file_cloud_cb<pcl_cuda::Device>, this, _1);
+        filegrabber.registerCallback (f);
       }
       else
       {
         std::cerr << "[RANSAC] Using CPU..." << std::endl;
-        boost::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = boost::bind (&SimpleKinectTool::file_cloud_cb<pcl_cuda::Host>, this, _1);
-        filegrabber->registerCallback (f);
+        std::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = std::bind (&SimpleKinectTool::file_cloud_cb<pcl_cuda::Host>, this, _1);
+        filegrabber.registerCallback (f);
       }
 
-      filegrabber->start ();
+      filegrabber.start ();
       while (go_on)//!viewer.wasStopped () && go_on)
       {
         sleep (1);
       }
-      filegrabber->stop ();
+      filegrabber.stop ();
 
       
       //------- END --------- load pcl logo file
 #else
-
-      pcl::Grabber* interface = new pcl::OpenNIGrabber();
-
+      pcl::OpenNIGrabber interface {};
 
       boost::signals2::connection c;
       if (use_device)
       {
         std::cerr << "[RANSAC] Using GPU..." << std::endl;
-        boost::function<void (const boost::shared_ptr<openni_wrapper::Image>& image, const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, float)> f = boost::bind (&SimpleKinectTool::cloud_cb<pcl_cuda::Device>, this, _1, _2, _3);
-        c = interface->registerCallback (f);
+        std::function<void (const openni_wrapper::Image::Ptr& image, const openni_wrapper::DepthImage::Ptr& depth_image, float)> f = std::bind (&SimpleKinectTool::cloud_cb<pcl_cuda::Device>, this, _1, _2, _3);
+        c = interface.registerCallback (f);
       }
       else
       {
         std::cerr << "[RANSAC] Using CPU..." << std::endl;
-        boost::function<void (const boost::shared_ptr<openni_wrapper::Image>& image, const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, float)> f = boost::bind (&SimpleKinectTool::cloud_cb<pcl_cuda::Host>, this, _1, _2, _3);
-        c = interface->registerCallback (f);
+        std::function<void (const openni_wrapper::Image::Ptr& image, const openni_wrapper::DepthImage::Ptr& depth_image, float)> f = std::bind (&SimpleKinectTool::cloud_cb<pcl_cuda::Host>, this, _1, _2, _3);
+        c = interface.registerCallback (f);
       }
 
       //viewer.runOnVisualizationThread (fn, "viz_cb");
-      interface->start ();
+      interface.start ();
       while (!viewer.wasStopped ())
       {
         sleep (1);
       }
 
-      interface->stop ();
+      interface.stop ();
 #endif 
     }
 

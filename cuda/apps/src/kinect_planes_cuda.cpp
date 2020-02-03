@@ -63,6 +63,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <functional>
 #include <iostream>
 #include <mutex>
 
@@ -89,7 +90,7 @@ class MultiRansac
       {
         double psize = 1.0,opacity = 1.0,linesize =1.0;
         std::string cloud_name ("cloud");
-        typedef pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal> ColorHandler;
+        using ColorHandler = pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormal>;
 
         ColorHandler Color_handler (normal_cloud);
         static bool first_time = true;
@@ -114,8 +115,8 @@ class MultiRansac
     }
 
     template <template <typename> class Storage> void 
-    cloud_cb (const boost::shared_ptr<openni_wrapper::Image>& image,
-              const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, 
+    cloud_cb (const openni_wrapper::Image::Ptr& image,
+              const openni_wrapper::DepthImage::Ptr& depth_image,
               float constant)
     {
       static unsigned count = 0;
@@ -144,7 +145,7 @@ class MultiRansac
       d2c.compute<Storage> (depth_image, image, constant, data, true, 2, smoothing_nr_iterations, smoothing_filter_size);
 
       // Compute normals
-      boost::shared_ptr<typename Storage<float4>::type> normals;
+      shared_ptr<typename Storage<float4>::type> normals;
       {
         ScopeTimeCPU time ("Normal Estimation");
         //normals = computeFastPointNormals<Storage> (data);
@@ -229,7 +230,7 @@ class MultiRansac
     }
       if (use_viewer)
       {
-        boost::shared_ptr<typename Storage<float4>::type> normals = sac_model->getNormals ();
+        auto normals = sac_model->getNormals ();
 
         std::lock_guard<std::mutex> l(m_mutex);
         normal_cloud.reset (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
@@ -247,45 +248,42 @@ class MultiRansac
     {
       this->use_viewer = use_viewer;
       //cudaDeviceSetCacheConfig (cudaFuncCachePreferL1);
-      pcl::Grabber* interface = new pcl::OpenNIGrabber();
+      pcl::OpenNIGrabber interface {};
 
       boost::signals2::connection c;
       if (use_device)
       {
         std::cerr << "[RANSAC] Using GPU..." << std::endl;
-        boost::function<void (const boost::shared_ptr<openni_wrapper::Image>& image, const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, float)> f = boost::bind (&MultiRansac::cloud_cb<Device>, this, _1, _2, _3);
-        c = interface->registerCallback (f);
+        std::function<void (const openni_wrapper::Image::Ptr& image, const openni_wrapper::DepthImage::Ptr& depth_image, float)> f = std::bind (&MultiRansac::cloud_cb<Device>, this, _1, _2, _3);
+        c = interface.registerCallback (f);
       }
       else
       {
         std::cerr << "[RANSAC] Using CPU..." << std::endl;
-        boost::function<void (const boost::shared_ptr<openni_wrapper::Image>& image, const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, float)> f = boost::bind (&MultiRansac::cloud_cb<Host>, this, _1, _2, _3);
-        c = interface->registerCallback (f);
+        std::function<void (const openni_wrapper::Image::Ptr& image, const openni_wrapper::DepthImage::Ptr& depth_image, float)> f = std::bind (&MultiRansac::cloud_cb<Host>, this, _1, _2, _3);
+        c = interface.registerCallback (f);
       }
 
       if (use_viewer)
-        viewer.runOnVisualizationThread (boost::bind(&MultiRansac::viz_cb, this, _1), "viz_cb");
+        viewer.runOnVisualizationThread (std::bind(&MultiRansac::viz_cb, this, _1), "viz_cb");
 
-      interface->start ();
+      interface.start ();
 
       //--------------------- load pcl logo file
-      //pcl::Grabber* filegrabber = 0;
-
       //float frames_per_second = 1;
       //bool repeat = false;
 
       //std::string path = "./pcl_logo.pcd";
-      //if (!path.empty() && boost::filesystem::exists (path))
+      //if (path.empty() || !boost::filesystem::exists (path))
       //{
-      //  filegrabber = new pcl::PCDGrabber<pcl::PointXYZRGB > (path, frames_per_second, repeat);
-      //}
-      //else
       //  std::cerr << "did not find file" << std::endl;
+      //}
+      //pcl::PCDGrabber<pcl::PointXYZRGB> filegrabber {path, frames_per_second, repeat};
       //
-      //boost::function<void(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&) > f = boost::bind (&MultiRansac::logo_cb, this, _1);
-      //boost::signals2::connection c1 = filegrabber->registerCallback (f);
+      //std::function<void(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&) > f = std::bind (&MultiRansac::logo_cb, this, _1);
+      //boost::signals2::connection c1 = filegrabber.registerCallback (f);
 
-      //filegrabber->start ();
+      //filegrabber.start ();
       //------- END --------- load pcl logo file
       //
       while (!viewer.wasStopped ())
@@ -293,8 +291,8 @@ class MultiRansac
         pcl_sleep (1);
       }
 
-      //filegrabber->stop ();
-      interface->stop ();
+      //filegrabber.stop ();
+      interface.stop ();
     }
 
     pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr logo_cloud_;

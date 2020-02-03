@@ -81,7 +81,7 @@ namespace pcl
           FPFH_ITEM
         };
 
-        CloudComposerItem (const QString name = "default item");
+        CloudComposerItem (const QString& name = "default item");
         CloudComposerItem (const CloudComposerItem& to_copy);
         ~CloudComposerItem ();
         
@@ -145,20 +145,20 @@ namespace pcl
     template <class T> class VPtr
     {
       public:
-        static T* asPtr (QVariant v)
+        static T* asPtr (const QVariant& v)
         {
           return (static_cast<T *> (v.value<void *> ()));
         }
 
         static QVariant asQVariant (T* ptr)
         {
-          return (qVariantFromValue (static_cast<void*>(ptr)));
+          return (QVariant::fromValue (static_cast<void*>(ptr)));
         }
     };
     
   }
 }
 
-typedef QList<const pcl::cloud_composer::CloudComposerItem*> ConstItemList;
+using ConstItemList = QList<const pcl::cloud_composer::CloudComposerItem *>;
 
 Q_DECLARE_METATYPE (pcl::cloud_composer::CloudComposerItem);

@@ -7,21 +7,17 @@
 #include <string>
 #include <vector>
 #include <ostream>
-#include <boost/shared_ptr.hpp>
 #include <pcl/pcl_macros.h>
 
 namespace pcl
 {
   struct PCLPointField
   {
-    PCLPointField () : offset (0), datatype (0), count (0)
-    {}
-
     std::string name;
 
-    pcl::uint32_t offset;
-    pcl::uint8_t datatype;
-    pcl::uint32_t count;
+    std::uint32_t offset = 0;
+    std::uint8_t datatype = 0;
+    std::uint32_t count = 0;
 
     enum PointFieldTypes { INT8 = 1,
                            UINT8 = 2,
@@ -33,12 +29,12 @@ namespace pcl
                            FLOAT64 = 8 };
 
   public:
-    typedef boost::shared_ptr< ::pcl::PCLPointField> Ptr;
-    typedef boost::shared_ptr< ::pcl::PCLPointField const> ConstPtr;
+    using Ptr = shared_ptr< ::pcl::PCLPointField>;
+    using ConstPtr = shared_ptr<const ::pcl::PCLPointField>;
   }; // struct PCLPointField
 
-  typedef boost::shared_ptr< ::pcl::PCLPointField> PCLPointFieldPtr;
-  typedef boost::shared_ptr< ::pcl::PCLPointField const> PCLPointFieldConstPtr;
+  using PCLPointFieldPtr = PCLPointField::Ptr;
+  using PCLPointFieldConstPtr = PCLPointField::ConstPtr;
 
   inline std::ostream& operator<<(std::ostream& s, const  ::pcl::PCLPointField & v)
   {
